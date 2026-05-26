@@ -26,13 +26,13 @@ SLIPPAGE_BPS = 2500               # 25% slippage for pump.fun tokens (high volat
 # SCORING THRESHOLDS (stricter = safer)
 # ═══════════════════════════════════════════════════════════════
 MIN_SCORE = 72                     # Min composite score to buy (was 50, too low)
-MIN_MC_USD = 15_000                # Min market cap (avoid dead launches)
+MIN_MC_USD = 8_000                 # Min market cap (lowered since WS catches early)
 MAX_MC_USD = 80_000                # Max market cap (still early enough for gains)
-MIN_LIQUIDITY_USD = 3_000          # Min liquidity
-MIN_HOLDERS = 30                   # Min unique holders
+MIN_LIQUIDITY_USD = 2_000          # Min liquidity (lowered for bonding curve tokens)
+MIN_HOLDERS = 15                   # Min unique holders (lowered for early tokens)
 MAX_TOP_HOLDER_PCT = 25            # Max % any single holder can have
-MIN_VOLUME_5M = 500                # Min 5-minute volume in USD
-MIN_TOKEN_AGE_SECONDS = 120        # Token must be at least 2 min old (avoid instant rugs)
+MIN_VOLUME_5M = 200                # Min 5-minute volume in USD
+MIN_TOKEN_AGE_SECONDS = 60         # Token must be at least 1 min old (avoid instant rugs)
 MAX_TOKEN_AGE_SECONDS = 1800       # Don't buy tokens older than 30 min
 
 # ═══════════════════════════════════════════════════════════════

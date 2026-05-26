@@ -181,29 +181,6 @@ class PumpBot:
 
     def _passes_basic_filters(self, token: Dict) -> bool:
         """Quick pre-filters before expensive scoring."""
-        # Market cap range
-        mc = token.get("market_cap_usd", 0)
-        if mc < config.MIN_MC_USD or mc > config.MAX_MC_USD:
-            return False
-
-        # Already graduated = can't buy on pump.fun
-        if token.get("complete"):
-            return False
-
-        # Minimum liquidity
-        liq = token.get("liquidity_usd", 0)
-        if liq < config.MIN_LIQUIDITY_USD:
-            return False
-
-        # Token age check
-        created_at = token.get("pair_created_at", 0)
-        if created_at:
-            age_seconds = time.time() - (created_at / 1000)  # DexScreener uses ms
-            if age_seconds < config.MIN_TOKEN_AGE_SECONDS:
-                return False  # Too new, might be instant rug
-            if age_seconds > config.MAX_TOKEN_AGE_SECONDS:
-                return False  # Too old, missed the early pump
-
         # Name must be resolved (not "?")
         name = token.get("name", "")
         symbol = token.get("symbol", "")
@@ -211,6 +188,47 @@ class PumpBot:
             return False
         if not symbol or symbol in ("?", "???", ""):
             return False
+
+        # Already graduated = can't buy on pump.fun
+        if token.get("complete"):
+            return False
+
+        # Market cap range (check if available - WS tokens may not have MC yet)
+        mc = token.get("market_cap_usd", 0)
+        if mc > 0:
+            if mc < config.MIN_MC_USD or mc > config.MAX_MC_USD:
+                return False
+        else:
+            # For PumpPortal WS tokens, check market_cap_sol instead
+            mc_sol = token.get("market_cap_sol", 0)
+            if mc_sol > 0:
+                # ~28 SOL initial = ~$4,760 at $170/SOL
+                # Min ~47 SOL ($8K), Max ~470 SOL ($80K)
+                min_sol = config.MIN_MC_USD / 170
+                max_sol = config.MAX_MC_USD / 170
+                if mc_sol < min_sol or mc_sol > max_sol:
+                    return False
+
+        # Minimum liquidity (only check if available - new tokens won't have it)
+        liq = token.get("liquidity_usd", 0)
+        if liq > 0 and liq < config.MIN_LIQUIDITY_USD:
+            return False
+
+        # Token age check (from DexScreener pair creation time)
+        created_at = token.get("pair_created_at", 0)
+        if created_at:
+            age_seconds = time.time() - (created_at / 1000)  # DexScreener uses ms
+            if age_seconds < config.MIN_TOKEN_AGE_SECONDS:
+                return False  # Too new, might be instant rug
+            if age_seconds > config.MAX_TOKEN_AGE_SECONDS:
+                return False  # Too old, missed the early pump
+        else:
+            # For WS tokens, check discovered_at
+            discovered_at = token.get("discovered_at", 0)
+            if discovered_at:
+                age = time.time() - discovered_at
+                if age < config.MIN_TOKEN_AGE_SECONDS:
+                    return False
 
         # Creator blocklist
         creator = token.get("creator", "")
